@@ -1,0 +1,13 @@
+# Binaries
+*.exe
+*.dll
+*.so
+stargate-server
+
+# Go
+vendor/
+
+# Config with secrets
+config/local.yaml
+config/local.yml
+config/*.local.*
