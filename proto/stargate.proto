@@ -20,6 +20,13 @@ service StarGateCore {
   // Send a reply within a session
   rpc SendReply(ReplyRequest) returns (ActionResponse);
 
+  // Retire a contact whose number has been reassigned to a different person.
+  // Marks the old contact's number as invalid, closes their session, then
+  // creates a new unknown contact and session for the same number.
+  // Returns the new session so the client can proceed with RenameContact
+  // and AssignContact.
+  rpc RetireContact(RetireRequest) returns (ChatSession);
+
   // Set or update a contact's name
   rpc RenameContact(RenameRequest) returns (ActionResponse);
 
@@ -108,6 +115,11 @@ message ActionResponse {
 
 message SessionRequest {
   string session_id = 1;
+}
+
+message RetireRequest {
+  string contact_phone = 1;
+  string user_id       = 2;
 }
 
 message ReplyRequest {
