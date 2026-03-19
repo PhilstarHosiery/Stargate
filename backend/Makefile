@@ -1,15 +1,17 @@
 # StarGate Backend
 #
-# Prerequisites for 'gen' target:
-#   protoc              https://github.com/protocolbuffers/protobuf/releases
-#   protoc-gen-go       go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
-#   protoc-gen-go-grpc  go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
+# protoc is bundled at ../bin/protoc (download a FreeBSD/Linux build for production).
+# Go plugins must be installed:
+#   go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
+#   go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
+
+PROTOC ?= ../bin/protoc
 
 .PHONY: gen build run tidy
 
 gen:
 	mkdir -p gen
-	protoc \
+	$(PROTOC) \
 		--proto_path=../proto \
 		--go_out=gen \
 		--go_opt=paths=source_relative \

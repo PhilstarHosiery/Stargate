@@ -1,14 +1,14 @@
 @echo off
 :: Generate Go code from proto/stargate.proto into gen/
 ::
-:: Prerequisites:
-::   protoc          https://github.com/protocolbuffers/protobuf/releases
-::   protoc-gen-go       go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
-::   protoc-gen-go-grpc  go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
+:: protoc is bundled at ..\bin\protoc.exe (protoc 34.0)
+:: Go plugins must be installed:
+::   go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
+::   go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
 
 if not exist gen mkdir gen
 
-protoc ^
+..\bin\protoc.exe ^
   --proto_path=..\proto ^
   --go_out=gen ^
   --go_opt=paths=source_relative ^
@@ -18,7 +18,7 @@ protoc ^
 
 if %ERRORLEVEL% neq 0 (
     echo.
-    echo ERROR: protoc failed. Make sure protoc and the Go plugins are installed and on PATH.
+    echo ERROR: protoc failed. Make sure protoc-gen-go and protoc-gen-go-grpc are installed and on PATH.
     exit /b 1
 )
 
