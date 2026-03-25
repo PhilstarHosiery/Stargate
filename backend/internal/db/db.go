@@ -411,6 +411,26 @@ func (d *DB) RetireContact(phone, userID string) (*models.Session, error) {
 	return newSession, nil
 }
 
+// ListGroups returns all groups ordered by name.
+func (d *DB) ListGroups() ([]*models.Group, error) {
+	rows, err := d.sql.Query(
+		`SELECT group_id, group_name FROM groups ORDER BY group_name`,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("db: ListGroups: %w", err)
+	}
+	defer rows.Close()
+	var groups []*models.Group
+	for rows.Next() {
+		var g models.Group
+		if err := rows.Scan(&g.GroupID, &g.GroupName); err != nil {
+			return nil, fmt.Errorf("db: scan group: %w", err)
+		}
+		groups = append(groups, &g)
+	}
+	return groups, rows.Err()
+}
+
 // GetUsersWithAccessToGroup returns user IDs of all users who can see a given group.
 // If groupID is empty, returns only global-access users (HR).
 func (d *DB) GetUsersWithAccessToGroup(groupID string) ([]string, error) {

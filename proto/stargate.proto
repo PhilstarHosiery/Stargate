@@ -2,6 +2,8 @@ syntax = "proto3";
 package philstar.stargate;
 
 option go_package = "github.com/PhilstarHosiery/stargate/backend/gen;stargate";
+option java_package = "com.philstar.stargate.proto";
+option java_multiple_files = true;
 
 service StarGateCore {
   // Authentication
@@ -34,6 +36,9 @@ service StarGateCore {
 
   // Set or update a contact's group association
   rpc AssignContact(AssignRequest) returns (ActionResponse);
+
+  // List all groups — used by clients to populate the AssignContact dropdown
+  rpc ListGroups(User) returns (GroupsResponse);
 }
 
 // -----------------------------------------------------------------------------
@@ -104,6 +109,10 @@ message MessageEvent {
 
 message SessionsResponse {
   repeated ChatSession sessions = 1;
+}
+
+message GroupsResponse {
+  repeated Group groups = 1;
 }
 
 message MessagesResponse {

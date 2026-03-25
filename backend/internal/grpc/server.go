@@ -258,6 +258,23 @@ func (s *Server) AssignContact(ctx context.Context, req *pb.AssignRequest) (*pb.
 	return &pb.ActionResponse{Success: true}, nil
 }
 
+// ListGroups returns all groups, used by clients to populate the AssignContact dropdown.
+func (s *Server) ListGroups(ctx context.Context, req *pb.User) (*pb.GroupsResponse, error) {
+	groups, err := s.db.ListGroups()
+	if err != nil {
+		slog.Error("ListGroups: db error", "err", err)
+		return nil, status.Error(codes.Internal, "internal error")
+	}
+	var pbGroups []*pb.Group
+	for _, g := range groups {
+		pbGroups = append(pbGroups, &pb.Group{
+			Id:   g.GroupID,
+			Name: g.GroupName,
+		})
+	}
+	return &pb.GroupsResponse{Groups: pbGroups}, nil
+}
+
 // RetireContact retires the old contact record and returns a fresh session for
 // the same phone number.
 func (s *Server) RetireContact(ctx context.Context, req *pb.RetireRequest) (*pb.ChatSession, error) {
