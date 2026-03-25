@@ -1,0 +1,295 @@
+/* ============================================================
+   StarGate — JavaFX stylesheet
+   ============================================================ */
+
+/* ---------------------------------------------------------- */
+/* Login                                                       */
+/* ---------------------------------------------------------- */
+
+.login-root {
+    -fx-background-color: #1a1a2e;
+}
+
+.login-title {
+    -fx-font-size: 30px;
+    -fx-font-weight: bold;
+    -fx-text-fill: white;
+}
+
+.login-subtitle {
+    -fx-font-size: 12px;
+    -fx-text-fill: #888;
+    -fx-padding: 0 0 8 0;
+}
+
+.login-field {
+    -fx-background-color: #16213e;
+    -fx-text-fill: white;
+    -fx-prompt-text-fill: #555;
+    -fx-border-color: #0f3460;
+    -fx-border-radius: 5;
+    -fx-background-radius: 5;
+    -fx-padding: 9 12;
+    -fx-font-size: 13px;
+}
+
+.login-field:focused {
+    -fx-border-color: #4a90d9;
+}
+
+.btn-primary {
+    -fx-background-color: #0f3460;
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+    -fx-background-radius: 5;
+    -fx-padding: 9 12;
+    -fx-cursor: hand;
+    -fx-font-size: 13px;
+}
+
+.btn-primary:hover {
+    -fx-background-color: #1a4a7a;
+}
+
+.error-label {
+    -fx-text-fill: #e74c3c;
+    -fx-font-size: 11px;
+}
+
+/* ---------------------------------------------------------- */
+/* Toolbar                                                     */
+/* ---------------------------------------------------------- */
+
+.toolbar {
+    -fx-background-color: #0f3460;
+}
+
+.toolbar-title {
+    -fx-font-size: 18px;
+    -fx-font-weight: bold;
+    -fx-text-fill: white;
+}
+
+.toolbar-user {
+    -fx-text-fill: #aab;
+    -fx-font-size: 13px;
+}
+
+.btn-toolbar {
+    -fx-background-color: transparent;
+    -fx-text-fill: #ccc;
+    -fx-border-color: #ffffff44;
+    -fx-border-radius: 4;
+    -fx-background-radius: 4;
+    -fx-padding: 4 10;
+    -fx-cursor: hand;
+}
+
+.btn-toolbar:hover {
+    -fx-background-color: #ffffff1a;
+    -fx-text-fill: white;
+}
+
+/* ---------------------------------------------------------- */
+/* Sidebar / session list                                      */
+/* ---------------------------------------------------------- */
+
+.sidebar {
+    -fx-background-color: #1a1a2e;
+}
+
+.sidebar-header {
+    -fx-background-color: #16213e;
+    -fx-border-color: #0f3460;
+    -fx-border-width: 0 0 1 0;
+}
+
+.sidebar-heading {
+    -fx-text-fill: #aab;
+    -fx-font-weight: bold;
+    -fx-font-size: 12px;
+    -fx-text-transform: uppercase;
+}
+
+.session-list {
+    -fx-background-color: #1a1a2e;
+    -fx-border-color: transparent;
+    -fx-padding: 0;
+}
+
+.session-list .list-cell {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+    -fx-padding: 0;
+}
+
+.session-list .list-cell:selected {
+    -fx-background-color: #0f3460;
+}
+
+.session-list .list-cell:hover:!selected {
+    -fx-background-color: #16213e;
+}
+
+/* Remove the default focus ring */
+.session-list:focused .list-cell:selected {
+    -fx-background-color: #0f3460;
+}
+
+.session-name {
+    -fx-text-fill: #e8e8e8;
+    -fx-font-size: 13px;
+    -fx-font-weight: bold;
+}
+
+.session-group {
+    -fx-text-fill: #778;
+    -fx-font-size: 11px;
+}
+
+.session-status {
+    -fx-font-size: 10px;
+    -fx-padding: 1 5;
+    -fx-background-radius: 3;
+    -fx-font-weight: bold;
+}
+
+.status-open {
+    -fx-background-color: #1d6b3e;
+    -fx-text-fill: #4ade80;
+}
+
+.status-closed {
+    -fx-background-color: #333;
+    -fx-text-fill: #888;
+}
+
+/* ---------------------------------------------------------- */
+/* Chat area                                                   */
+/* ---------------------------------------------------------- */
+
+.chat-area {
+    -fx-background-color: #f4f4f6;
+}
+
+.placeholder-label {
+    -fx-text-fill: #aaa;
+    -fx-font-size: 14px;
+}
+
+.chat-header {
+    -fx-background-color: white;
+    -fx-border-color: #e0e0e0;
+    -fx-border-width: 0 0 1 0;
+}
+
+.contact-name {
+    -fx-font-size: 15px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #1a1a2e;
+}
+
+.contact-group {
+    -fx-font-size: 11px;
+    -fx-text-fill: #777;
+}
+
+.messages-scroll {
+    -fx-background-color: #f4f4f6;
+    -fx-background: #f4f4f6;
+}
+
+.messages-scroll > .viewport {
+    -fx-background-color: #f4f4f6;
+}
+
+/* Inbound bubble — from contact, left-aligned */
+.bubble-in {
+    -fx-background-color: #e4e4e8;
+    -fx-text-fill: #222;
+    -fx-background-radius: 14 14 14 3;
+    -fx-font-size: 13px;
+}
+
+/* Outbound bubble — from user, right-aligned */
+.bubble-out {
+    -fx-background-color: #0f3460;
+    -fx-text-fill: white;
+    -fx-background-radius: 14 14 3 14;
+    -fx-font-size: 13px;
+}
+
+.bubble-time {
+    -fx-font-size: 10px;
+    -fx-text-fill: #999;
+    -fx-padding: 0 2;
+}
+
+/* ---------------------------------------------------------- */
+/* Reply bar                                                   */
+/* ---------------------------------------------------------- */
+
+.reply-bar {
+    -fx-background-color: white;
+    -fx-border-color: #e0e0e0;
+    -fx-border-width: 1 0 0 0;
+}
+
+.reply-input {
+    -fx-background-color: #f4f4f6;
+    -fx-border-color: #ddd;
+    -fx-border-radius: 20;
+    -fx-background-radius: 20;
+    -fx-padding: 8 16;
+    -fx-font-size: 13px;
+}
+
+.reply-input:focused {
+    -fx-border-color: #0f3460;
+}
+
+.btn-send {
+    -fx-background-color: #0f3460;
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+    -fx-background-radius: 20;
+    -fx-padding: 8 22;
+    -fx-cursor: hand;
+}
+
+.btn-send:hover {
+    -fx-background-color: #1a4a7a;
+}
+
+/* ---------------------------------------------------------- */
+/* Action buttons in chat header                              */
+/* ---------------------------------------------------------- */
+
+.btn-action {
+    -fx-background-color: #f0f0f4;
+    -fx-border-color: #ccc;
+    -fx-border-radius: 4;
+    -fx-background-radius: 4;
+    -fx-padding: 4 10;
+    -fx-cursor: hand;
+    -fx-font-size: 12px;
+}
+
+.btn-action:hover {
+    -fx-background-color: #dde;
+}
+
+.btn-retire {
+    -fx-background-color: #fff0f0;
+    -fx-border-color: #e74c3c;
+    -fx-border-radius: 4;
+    -fx-background-radius: 4;
+    -fx-text-fill: #c0392b;
+    -fx-padding: 4 10;
+    -fx-cursor: hand;
+    -fx-font-size: 12px;
+}
+
+.btn-retire:hover {
+    -fx-background-color: #fde3e3;
+}

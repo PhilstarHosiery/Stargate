@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="com.philstar.stargate.controllers.LoginController"
+      alignment="CENTER" spacing="12"
+      stylesheets="@styles.css"
+      styleClass="login-root">
+
+    <padding><Insets top="48" right="60" bottom="48" left="60"/></padding>
+
+    <Label text="StarGate" styleClass="login-title"/>
+    <Label text="SMS Gateway" styleClass="login-subtitle"/>
+
+    <VBox spacing="8" style="-fx-padding: 16 0 0 0;">
+        <TextField fx:id="usernameField" promptText="Username" styleClass="login-field"/>
+        <PasswordField fx:id="passwordField" promptText="Password" styleClass="login-field"
+                       onAction="#onLogin"/>
+        <Button fx:id="loginButton" text="Log In" maxWidth="Infinity"
+                onAction="#onLogin" styleClass="btn-primary" defaultButton="true"/>
+        <Label fx:id="errorLabel" text="" styleClass="error-label" wrapText="true"/>
+    </VBox>
+
+</VBox>

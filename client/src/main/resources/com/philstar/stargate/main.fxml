@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<BorderPane xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.philstar.stargate.controllers.MainController"
+            stylesheets="@styles.css">
+
+    <!-- ================================================================== -->
+    <!-- TOP — Toolbar                                                       -->
+    <!-- ================================================================== -->
+    <top>
+        <HBox styleClass="toolbar" alignment="CENTER_LEFT" spacing="12">
+            <padding><Insets top="10" right="16" bottom="10" left="16"/></padding>
+            <Label text="StarGate" styleClass="toolbar-title"/>
+            <Region HBox.hgrow="ALWAYS"/>
+            <Label fx:id="usernameLabel" styleClass="toolbar-user"/>
+            <Button text="Logout" onAction="#onLogout" styleClass="btn-toolbar"/>
+        </HBox>
+    </top>
+
+    <!-- ================================================================== -->
+    <!-- LEFT — Session list                                                 -->
+    <!-- ================================================================== -->
+    <left>
+        <VBox styleClass="sidebar" prefWidth="280" minWidth="200">
+            <HBox styleClass="sidebar-header" alignment="CENTER_LEFT">
+                <padding><Insets top="10" right="12" bottom="10" left="12"/></padding>
+                <Label text="Conversations" styleClass="sidebar-heading"/>
+            </HBox>
+            <ListView fx:id="sessionList" VBox.vgrow="ALWAYS" styleClass="session-list"/>
+        </VBox>
+    </left>
+
+    <!-- ================================================================== -->
+    <!-- CENTER — Chat panel + placeholder                                   -->
+    <!-- ================================================================== -->
+    <center>
+        <StackPane styleClass="chat-area">
+
+            <!-- Placeholder shown before any session is selected -->
+            <Label fx:id="placeholderLabel"
+                   text="Select a conversation to start messaging"
+                   styleClass="placeholder-label"/>
+
+            <!-- Chat panel (hidden until session selected) -->
+            <VBox fx:id="chatPanel" visible="false" managed="false">
+
+                <!-- Contact header -->
+                <HBox styleClass="chat-header" alignment="CENTER_LEFT" spacing="10">
+                    <padding><Insets top="10" right="16" bottom="10" left="16"/></padding>
+                    <VBox spacing="2" HBox.hgrow="ALWAYS">
+                        <Label fx:id="contactNameLabel" styleClass="contact-name"/>
+                        <Label fx:id="contactGroupLabel" styleClass="contact-group"/>
+                    </VBox>
+                    <Button text="Rename" onAction="#onRename" styleClass="btn-action"/>
+                    <Button text="Assign" onAction="#onAssign" styleClass="btn-action"/>
+                    <Button text="Retire" onAction="#onRetire" styleClass="btn-retire"/>
+                </HBox>
+
+                <!-- Message scroll area -->
+                <ScrollPane fx:id="messagesScroll" VBox.vgrow="ALWAYS"
+                            fitToWidth="true" styleClass="messages-scroll">
+                    <VBox fx:id="messagesBox" spacing="2" fillWidth="true">
+                        <padding><Insets top="10" bottom="10"/></padding>
+                    </VBox>
+                </ScrollPane>
+
+                <!-- Reply bar -->
+                <HBox styleClass="reply-bar" spacing="8" alignment="CENTER">
+                    <padding><Insets top="10" right="16" bottom="10" left="16"/></padding>
+                    <TextField fx:id="replyField" HBox.hgrow="ALWAYS"
+                               promptText="Type a message…"
+                               onAction="#onSend"
+                               styleClass="reply-input"/>
+                    <Button text="Send" onAction="#onSend" styleClass="btn-send"/>
+                </HBox>
+
+            </VBox>
+        </StackPane>
+    </center>
+
+</BorderPane>
