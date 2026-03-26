@@ -69,6 +69,22 @@ func newID() string {
 // Users
 // -----------------------------------------------------------------------------
 
+// CreateUser inserts a new user with a pre-hashed password.
+func (d *DB) CreateUser(username, passwordHash string, globalAccess bool) error {
+	ga := 0
+	if globalAccess {
+		ga = 1
+	}
+	_, err := d.sql.Exec(
+		`INSERT INTO users (user_id, username, password_hash, has_global_access) VALUES (?, ?, ?, ?)`,
+		newID(), username, passwordHash, ga,
+	)
+	if err != nil {
+		return fmt.Errorf("db: CreateUser: %w", err)
+	}
+	return nil
+}
+
 // GetUserByUsername fetches a user by their username.
 func (d *DB) GetUserByUsername(username string) (*models.User, error) {
 	row := d.sql.QueryRow(

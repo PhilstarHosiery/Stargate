@@ -1,11 +1,17 @@
 package main
 
 import (
+	"bufio"
+	"flag"
+	"fmt"
 	"log/slog"
 	"net"
 	"net/http"
 	"os"
+	"strings"
 
+	"golang.org/x/crypto/bcrypt"
+	"golang.org/x/term"
 	"google.golang.org/grpc"
 
 	pb "github.com/PhilstarHosiery/stargate/backend/gen"
@@ -16,6 +22,9 @@ import (
 )
 
 func main() {
+	createUser := flag.Bool("create-user", false, "interactively create a new user and exit")
+	flag.Parse()
+
 	// Load config — try config/config.yaml first, fall back to config.yaml.
 	cfg, err := loadConfig()
 	if err != nil {
@@ -36,6 +45,11 @@ func main() {
 		os.Exit(1)
 	}
 	slog.Info("database ready", "path", cfg.Database.Path)
+
+	if *createUser {
+		runCreateUser(database)
+		return
+	}
 
 	// Create application components.
 	smsOutbound := sms.NewOutboundClient(cfg.SMS.GateURL, cfg.SMS.APIKey)
@@ -70,6 +84,48 @@ func main() {
 		slog.Error("gRPC server failed", "err", err)
 		os.Exit(1)
 	}
+}
+
+// runCreateUser prompts for credentials, creates a user, and exits.
+func runCreateUser(database *db.DB) {
+	reader := bufio.NewReader(os.Stdin)
+
+	fmt.Print("Username: ")
+	username, _ := reader.ReadString('\n')
+	username = strings.TrimSpace(username)
+	if username == "" {
+		fmt.Fprintln(os.Stderr, "error: username cannot be empty")
+		os.Exit(1)
+	}
+
+	fmt.Print("Password: ")
+	passwordBytes, err := term.ReadPassword(int(os.Stdin.Fd()))
+	fmt.Println()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "error reading password: %v\n", err)
+		os.Exit(1)
+	}
+	if len(passwordBytes) == 0 {
+		fmt.Fprintln(os.Stderr, "error: password cannot be empty")
+		os.Exit(1)
+	}
+
+	fmt.Print("Global access (HR — sees all groups)? [y/N]: ")
+	answer, _ := reader.ReadString('\n')
+	globalAccess := strings.ToLower(strings.TrimSpace(answer)) == "y"
+
+	hash, err := bcrypt.GenerateFromPassword(passwordBytes, bcrypt.DefaultCost)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "error hashing password: %v\n", err)
+		os.Exit(1)
+	}
+
+	if err := database.CreateUser(username, string(hash), globalAccess); err != nil {
+		fmt.Fprintf(os.Stderr, "error creating user: %v\n", err)
+		os.Exit(1)
+	}
+
+	fmt.Printf("User %q created (global_access=%v)\n", username, globalAccess)
 }
 
 // loadConfig tries config/config.yaml then config.yaml.
