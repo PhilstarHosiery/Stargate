@@ -29,6 +29,7 @@ type smsGateEvent struct {
 }
 
 type smsGatePayload struct {
+	MessageID string `json:"messageId"`
 	Sender    string `json:"sender"`
 	Message   string `json:"message"`
 	SimNumber int    `json:"simNumber"`
@@ -119,10 +120,16 @@ func NewWebhookHandler(database *db.DB, broadcaster Broadcaster, webhookSecret s
 			slog.Info("webhook: created new session", "session_id", sess.SessionID)
 		}
 
-		// Store the inbound message.
-		if _, err := database.CreateMessage(sess.SessionID, "INBOUND", message, ""); err != nil {
+		// Store the inbound message; nil return means duplicate — already processed.
+		msg, err := database.CreateMessage(sess.SessionID, "INBOUND", message, "", event.Payload.MessageID)
+		if err != nil {
 			slog.Error("webhook: CreateMessage failed", "err", err)
 			http.Error(w, "internal error", http.StatusInternalServerError)
+			return
+		}
+		if msg == nil {
+			slog.Info("webhook: duplicate message ignored", "gateway_id", event.Payload.MessageID)
+			w.WriteHeader(http.StatusOK)
 			return
 		}
 

@@ -3,17 +3,19 @@ package db
 import (
 	"crypto/rand"
 	"database/sql"
-	_ "embed"
+	"embed"
 	"encoding/hex"
 	"fmt"
+	"io/fs"
+	"strings"
 	"time"
 
 	"github.com/PhilstarHosiery/stargate/backend/internal/models"
 	_ "modernc.org/sqlite"
 )
 
-//go:embed migrations/001_initial.sql
-var migrationSQL string
+//go:embed migrations
+var migrationsFS embed.FS
 
 
 // DB wraps a *sql.DB and exposes domain-level query methods.
@@ -48,10 +50,49 @@ func (d *DB) Close() error {
 	return d.sql.Close()
 }
 
-// Migrate runs the embedded migration SQL to create tables if they don't exist.
+// Migrate runs all embedded migration files in order, skipping already-applied ones.
 func Migrate(d *DB) error {
-	if _, err := d.sql.Exec(migrationSQL); err != nil {
-		return fmt.Errorf("db: migrate: %w", err)
+	// Ensure the tracking table exists.
+	if _, err := d.sql.Exec(`CREATE TABLE IF NOT EXISTS schema_migrations (
+		version    TEXT PRIMARY KEY,
+		applied_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+	)`); err != nil {
+		return fmt.Errorf("db: create schema_migrations: %w", err)
+	}
+
+	entries, err := fs.ReadDir(migrationsFS, "migrations")
+	if err != nil {
+		return fmt.Errorf("db: read migrations dir: %w", err)
+	}
+
+	for _, entry := range entries {
+		if entry.IsDir() || !strings.HasSuffix(entry.Name(), ".sql") {
+			continue
+		}
+		version := entry.Name()
+
+		var count int
+		if err := d.sql.QueryRow(
+			`SELECT COUNT(*) FROM schema_migrations WHERE version = ?`, version,
+		).Scan(&count); err != nil {
+			return fmt.Errorf("db: check migration %s: %w", version, err)
+		}
+		if count > 0 {
+			continue
+		}
+
+		content, err := fs.ReadFile(migrationsFS, "migrations/"+version)
+		if err != nil {
+			return fmt.Errorf("db: read migration %s: %w", version, err)
+		}
+		if _, err := d.sql.Exec(string(content)); err != nil {
+			return fmt.Errorf("db: run migration %s: %w", version, err)
+		}
+		if _, err := d.sql.Exec(
+			`INSERT INTO schema_migrations (version) VALUES (?)`, version,
+		); err != nil {
+			return fmt.Errorf("db: record migration %s: %w", version, err)
+		}
 	}
 	return nil
 }
@@ -277,7 +318,9 @@ func (d *DB) GetMessagesBySession(sessionID string) ([]*models.Message, error) {
 }
 
 // CreateMessage inserts a new message record. sentByUserID may be empty for inbound messages.
-func (d *DB) CreateMessage(sessionID, direction, text, sentByUserID string) (*models.Message, error) {
+// gatewayMessageID is the SMS Gate message ID used to deduplicate webhook retries; pass empty for outbound.
+// Returns (nil, nil) if the message was already recorded (duplicate).
+func (d *DB) CreateMessage(sessionID, direction, text, sentByUserID, gatewayMessageID string) (*models.Message, error) {
 	m := &models.Message{
 		MessageID: newID(),
 		SessionID: sessionID,
@@ -289,15 +332,20 @@ func (d *DB) CreateMessage(sessionID, direction, text, sentByUserID string) (*mo
 		m.SentByUserID = sql.NullString{String: sentByUserID, Valid: true}
 	}
 
-	_, err := d.sql.Exec(
-		`INSERT INTO messages (message_id, session_id, direction, text, sent_by_user_id, timestamp)
-		 VALUES (?, ?, ?, ?, ?, ?)`,
+	result, err := d.sql.Exec(
+		`INSERT OR IGNORE INTO messages (message_id, session_id, direction, text, sent_by_user_id, timestamp, gateway_message_id)
+		 VALUES (?, ?, ?, ?, ?, ?, ?)`,
 		m.MessageID, m.SessionID, m.Direction, m.Text,
 		nullableString(sentByUserID),
 		m.Timestamp.Format("2006-01-02 15:04:05"),
+		nullableString(gatewayMessageID),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("db: CreateMessage: %w", err)
+	}
+	rows, _ := result.RowsAffected()
+	if rows == 0 {
+		return nil, nil // duplicate — already processed
 	}
 	return m, nil
 }

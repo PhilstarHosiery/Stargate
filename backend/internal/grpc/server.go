@@ -174,7 +174,7 @@ func (s *Server) SendReply(ctx context.Context, req *pb.ReplyRequest) (*pb.Actio
 	}
 
 	// Store the outbound message.
-	if _, err := s.db.CreateMessage(req.SessionId, "OUTBOUND", req.MessageText, req.UserId); err != nil {
+	if _, err := s.db.CreateMessage(req.SessionId, "OUTBOUND", req.MessageText, req.UserId, ""); err != nil {
 		slog.Error("SendReply: CreateMessage failed", "err", err)
 		return nil, status.Error(codes.Internal, "internal error")
 	}
