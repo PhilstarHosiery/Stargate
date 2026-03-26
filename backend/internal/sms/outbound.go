@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-// OutboundClient sends SMS messages via the SMS Gate / RUT241 API.
+// OutboundClient sends SMS messages via the SMS Gate API.
 type OutboundClient struct {
 	gateURL string
 	apiKey  string
@@ -27,17 +27,21 @@ func NewOutboundClient(gateURL, apiKey string) *OutboundClient {
 }
 
 type outboundPayload struct {
-	To      string `json:"to"`
-	Message string `json:"message"`
-	Sim     int    `json:"sim"`
+	PhoneNumbers []string        `json:"phoneNumbers"`
+	TextMessage  outboundMessage `json:"textMessage"`
+	SimNumber    int             `json:"simNumber"`
 }
 
-// Send POSTs an SMS via the gateway API. sim should be 1 (Globe) or 2 (Smart).
+type outboundMessage struct {
+	Text string `json:"text"`
+}
+
+// Send POSTs an SMS via the SMS Gate API. sim should be 1 (Globe) or 2 (Smart).
 func (c *OutboundClient) Send(to string, sim int, message string) error {
 	payload := outboundPayload{
-		To:      to,
-		Message: message,
-		Sim:     sim,
+		PhoneNumbers: []string{to},
+		TextMessage:  outboundMessage{Text: message},
+		SimNumber:    sim,
 	}
 
 	body, err := json.Marshal(payload)

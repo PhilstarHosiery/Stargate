@@ -17,8 +17,9 @@ type Config struct {
 		Path string `yaml:"path"` // e.g. "stargate.db"
 	} `yaml:"database"`
 	SMS struct {
-		GateURL string `yaml:"gate_url"` // SMS Gate / RUT241 API base URL
-		APIKey  string `yaml:"api_key"`
+		GateURL       string `yaml:"gate_url"`       // SMS Gate / RUT241 API base URL
+		APIKey        string `yaml:"api_key"`        // Bearer token for outbound API calls
+		WebhookSecret string `yaml:"webhook_secret"` // HMAC-SHA256 signing key for inbound webhooks
 	} `yaml:"sms"`
 }
 
