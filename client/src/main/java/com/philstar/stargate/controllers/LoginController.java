@@ -55,6 +55,7 @@ public class LoginController {
                 Platform.runLater(() -> {
                     AppState state = AppState.get();
                     state.setUser(resp.getUserId(), username);
+                    state.setHasGlobalAccess(resp.getHasGlobalAccess());
                     state.setGrpc(grpc);
                     state.loadGroups(groups);
                     try {

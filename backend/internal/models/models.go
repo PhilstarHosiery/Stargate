@@ -35,6 +35,14 @@ type Session struct {
 	Status       string // "OPEN" | "CLOSED"
 }
 
+// UserWithGroups is a User plus their assigned group IDs, used for admin display.
+type UserWithGroups struct {
+	UserID          string
+	Username        string
+	HasGlobalAccess bool
+	GroupIDs        []string
+}
+
 // Message represents a single text sent or received within a Session.
 type Message struct {
 	MessageID     string

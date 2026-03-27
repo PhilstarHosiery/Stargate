@@ -129,7 +129,7 @@ func runCreateUser(database *db.DB) {
 		os.Exit(1)
 	}
 
-	if err := database.CreateUser(username, string(hash), globalAccess); err != nil {
+	if _, err := database.CreateUser(username, string(hash), globalAccess); err != nil {
 		fmt.Fprintf(os.Stderr, "error creating user: %v\n", err)
 		os.Exit(1)
 	}

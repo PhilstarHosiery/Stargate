@@ -26,6 +26,7 @@ public class MainController {
 
     // Toolbar
     @FXML private Label usernameLabel;
+    @FXML private Button adminButton;
 
     // Session list
     @FXML private ListView<ChatSession> sessionList;
@@ -49,6 +50,11 @@ public class MainController {
     public void initialize() {
         AppState state = AppState.get();
         usernameLabel.setText(state.getUsername());
+
+        if (state.isHasGlobalAccess()) {
+            adminButton.setVisible(true);
+            adminButton.setManaged(true);
+        }
 
         sessionList.setCellFactory(lv -> new SessionCell());
         sessionList.setItems(state.getSessions());
@@ -339,6 +345,15 @@ public class MainController {
     // -------------------------------------------------------------------------
     // Logout
     // -------------------------------------------------------------------------
+
+    @FXML
+    private void onAdmin() {
+        try {
+            StarGateApp.showAdmin();
+        } catch (Exception e) {
+            showError("Failed to open admin panel.");
+        }
+    }
 
     @FXML
     private void onLogout() {

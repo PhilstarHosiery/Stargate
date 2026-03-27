@@ -110,20 +110,21 @@ func newID() string {
 // Users
 // -----------------------------------------------------------------------------
 
-// CreateUser inserts a new user with a pre-hashed password.
-func (d *DB) CreateUser(username, passwordHash string, globalAccess bool) error {
+// CreateUser inserts a new user with a pre-hashed password and returns the new user_id.
+func (d *DB) CreateUser(username, passwordHash string, globalAccess bool) (string, error) {
+	id := newID()
 	ga := 0
 	if globalAccess {
 		ga = 1
 	}
 	_, err := d.sql.Exec(
 		`INSERT INTO users (user_id, username, password_hash, has_global_access) VALUES (?, ?, ?, ?)`,
-		newID(), username, passwordHash, ga,
+		id, username, passwordHash, ga,
 	)
 	if err != nil {
-		return fmt.Errorf("db: CreateUser: %w", err)
+		return "", fmt.Errorf("db: CreateUser: %w", err)
 	}
-	return nil
+	return id, nil
 }
 
 // GetUserByUsername fetches a user by their username.
@@ -548,6 +549,160 @@ func (d *DB) GetUsersWithAccessToGroup(groupID string) ([]string, error) {
 		}
 	}
 	return userIDs, rows2.Err()
+}
+
+// -----------------------------------------------------------------------------
+// Admin
+// -----------------------------------------------------------------------------
+
+// ListUsersWithGroups returns all users with their assigned group IDs.
+func (d *DB) ListUsersWithGroups() ([]*models.UserWithGroups, error) {
+	rows, err := d.sql.Query(
+		`SELECT user_id, username, has_global_access FROM users ORDER BY username`,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("db: ListUsersWithGroups: %w", err)
+	}
+	defer rows.Close()
+
+	var users []*models.UserWithGroups
+	for rows.Next() {
+		var u models.UserWithGroups
+		var ga int
+		if err := rows.Scan(&u.UserID, &u.Username, &ga); err != nil {
+			return nil, fmt.Errorf("db: ListUsersWithGroups scan: %w", err)
+		}
+		u.HasGlobalAccess = ga != 0
+		users = append(users, &u)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	for _, u := range users {
+		gRows, err := d.sql.Query(
+			`SELECT group_id FROM user_groups WHERE user_id = ? ORDER BY group_id`,
+			u.UserID,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("db: ListUsersWithGroups groups: %w", err)
+		}
+		for gRows.Next() {
+			var gid string
+			if err := gRows.Scan(&gid); err != nil {
+				gRows.Close()
+				return nil, err
+			}
+			u.GroupIDs = append(u.GroupIDs, gid)
+		}
+		gRows.Close()
+		if err := gRows.Err(); err != nil {
+			return nil, err
+		}
+	}
+
+	return users, nil
+}
+
+// CreateGroup inserts a new group and returns it.
+func (d *DB) CreateGroup(name string) (*models.Group, error) {
+	g := &models.Group{GroupID: newID(), GroupName: name}
+	_, err := d.sql.Exec(
+		`INSERT INTO groups (group_id, group_name) VALUES (?, ?)`,
+		g.GroupID, g.GroupName,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("db: CreateGroup: %w", err)
+	}
+	return g, nil
+}
+
+// RenameGroup updates a group's name.
+func (d *DB) RenameGroup(groupID, name string) error {
+	_, err := d.sql.Exec(
+		`UPDATE groups SET group_name = ? WHERE group_id = ?`,
+		name, groupID,
+	)
+	if err != nil {
+		return fmt.Errorf("db: RenameGroup: %w", err)
+	}
+	return nil
+}
+
+// DeleteGroup deletes a group. Returns an error if any contacts are still assigned to it.
+// User-group mappings for the group are removed atomically in the same transaction.
+func (d *DB) DeleteGroup(groupID string) error {
+	var count int
+	if err := d.sql.QueryRow(
+		`SELECT COUNT(*) FROM contacts WHERE group_id = ?`, groupID,
+	).Scan(&count); err != nil {
+		return fmt.Errorf("db: DeleteGroup contact check: %w", err)
+	}
+	if count > 0 {
+		return fmt.Errorf("cannot delete group: %d contact(s) still assigned", count)
+	}
+
+	tx, err := d.sql.Begin()
+	if err != nil {
+		return fmt.Errorf("db: DeleteGroup begin tx: %w", err)
+	}
+	defer tx.Rollback()
+
+	if _, err := tx.Exec(`DELETE FROM user_groups WHERE group_id = ?`, groupID); err != nil {
+		return fmt.Errorf("db: DeleteGroup remove user_groups: %w", err)
+	}
+	if _, err := tx.Exec(`DELETE FROM groups WHERE group_id = ?`, groupID); err != nil {
+		return fmt.Errorf("db: DeleteGroup delete: %w", err)
+	}
+	return tx.Commit()
+}
+
+// DeleteUser removes a user and their group mappings.
+func (d *DB) DeleteUser(userID string) error {
+	tx, err := d.sql.Begin()
+	if err != nil {
+		return fmt.Errorf("db: DeleteUser begin tx: %w", err)
+	}
+	defer tx.Rollback()
+
+	if _, err := tx.Exec(`DELETE FROM user_groups WHERE user_id = ?`, userID); err != nil {
+		return fmt.Errorf("db: DeleteUser remove user_groups: %w", err)
+	}
+	if _, err := tx.Exec(`DELETE FROM users WHERE user_id = ?`, userID); err != nil {
+		return fmt.Errorf("db: DeleteUser delete: %w", err)
+	}
+	return tx.Commit()
+}
+
+// SetUserPermissions atomically replaces a user's has_global_access flag and group memberships.
+func (d *DB) SetUserPermissions(userID string, groupIDs []string, hasGlobalAccess bool) error {
+	ga := 0
+	if hasGlobalAccess {
+		ga = 1
+	}
+
+	tx, err := d.sql.Begin()
+	if err != nil {
+		return fmt.Errorf("db: SetUserPermissions begin tx: %w", err)
+	}
+	defer tx.Rollback()
+
+	if _, err := tx.Exec(
+		`UPDATE users SET has_global_access = ? WHERE user_id = ?`, ga, userID,
+	); err != nil {
+		return fmt.Errorf("db: SetUserPermissions update flag: %w", err)
+	}
+	if _, err := tx.Exec(`DELETE FROM user_groups WHERE user_id = ?`, userID); err != nil {
+		return fmt.Errorf("db: SetUserPermissions clear groups: %w", err)
+	}
+	for _, gid := range groupIDs {
+		if _, err := tx.Exec(
+			`INSERT INTO user_groups (user_id, group_id) VALUES (?, ?)`, userID, gid,
+		); err != nil {
+			return fmt.Errorf("db: SetUserPermissions insert group %s: %w", gid, err)
+		}
+	}
+	return tx.Commit()
 }
 
 // nullableString converts an empty string to a SQL NULL.

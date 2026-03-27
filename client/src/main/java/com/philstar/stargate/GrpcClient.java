@@ -85,6 +85,63 @@ public class GrpcClient {
                 .getGroupsList();
     }
 
+    // -------------------------------------------------------------------------
+    // Admin
+    // -------------------------------------------------------------------------
+
+    public List<UserInfo> listUsers(String requestingUserId) {
+        return blocking.listUsers(User.newBuilder().setUserId(requestingUserId).build())
+                .getUsersList();
+    }
+
+    public ActionResponse createUser(String username, String password, boolean hasGlobalAccess, String requestingUserId) {
+        return blocking.createUser(CreateUserRequest.newBuilder()
+                .setUsername(username)
+                .setPassword(password)
+                .setHasGlobalAccess(hasGlobalAccess)
+                .setRequestingUserId(requestingUserId)
+                .build());
+    }
+
+    public ActionResponse deleteUser(String userId, String requestingUserId) {
+        return blocking.deleteUser(DeleteUserRequest.newBuilder()
+                .setUserId(userId)
+                .setRequestingUserId(requestingUserId)
+                .build());
+    }
+
+    public Group createGroup(String name, String requestingUserId) {
+        return blocking.createGroup(CreateGroupRequest.newBuilder()
+                .setName(name)
+                .setRequestingUserId(requestingUserId)
+                .build());
+    }
+
+    public ActionResponse renameGroup(String groupId, String newName, String requestingUserId) {
+        return blocking.renameGroup(RenameGroupRequest.newBuilder()
+                .setGroupId(groupId)
+                .setNewName(newName)
+                .setRequestingUserId(requestingUserId)
+                .build());
+    }
+
+    public ActionResponse deleteGroup(String groupId, String requestingUserId) {
+        return blocking.deleteGroup(DeleteGroupRequest.newBuilder()
+                .setGroupId(groupId)
+                .setRequestingUserId(requestingUserId)
+                .build());
+    }
+
+    public ActionResponse setUserPermissions(String userId, boolean hasGlobalAccess,
+                                              List<String> groupIds, String requestingUserId) {
+        return blocking.setUserPermissions(SetPermissionsRequest.newBuilder()
+                .setUserId(userId)
+                .setHasGlobalAccess(hasGlobalAccess)
+                .addAllGroupIds(groupIds)
+                .setRequestingUserId(requestingUserId)
+                .build());
+    }
+
     public void subscribeToInbox(String userId, StreamObserver<MessageEvent> observer) {
         async.subscribeToInbox(User.newBuilder()
                 .setUserId(userId)

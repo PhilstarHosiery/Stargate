@@ -31,6 +31,18 @@ public class StarGateApp extends Application {
         primaryStage.centerOnScreen();
     }
 
+    public static void showAdmin() throws IOException {
+        FXMLLoader loader = new FXMLLoader(StarGateApp.class.getResource("admin.fxml"));
+        Scene scene = new Scene(loader.load(), 820, 580);
+        Stage adminStage = new Stage();
+        adminStage.setTitle("StarGate — Admin");
+        adminStage.setScene(scene);
+        adminStage.setMinWidth(600);
+        adminStage.setMinHeight(400);
+        adminStage.initOwner(primaryStage);
+        adminStage.show();
+    }
+
     public static void showMain() throws IOException {
         FXMLLoader loader = new FXMLLoader(StarGateApp.class.getResource("main.fxml"));
         Scene scene = new Scene(loader.load(), 960, 640);

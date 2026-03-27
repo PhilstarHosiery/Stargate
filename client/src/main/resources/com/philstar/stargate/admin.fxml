@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<BorderPane xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.philstar.stargate.controllers.AdminController"
+            stylesheets="@styles.css">
+
+    <top>
+        <HBox styleClass="toolbar" alignment="CENTER_LEFT" spacing="12">
+            <padding><Insets top="10" right="16" bottom="10" left="16"/></padding>
+            <Label text="Admin Panel" styleClass="toolbar-title"/>
+        </HBox>
+    </top>
+
+    <center>
+        <TabPane tabClosingPolicy="UNAVAILABLE">
+
+            <!-- ============================================================ -->
+            <!-- Groups                                                        -->
+            <!-- ============================================================ -->
+            <Tab text="Groups">
+                <VBox spacing="10">
+                    <padding><Insets top="16" right="16" bottom="16" left="16"/></padding>
+
+                    <TableView fx:id="groupsTable" VBox.vgrow="ALWAYS">
+                        <columns>
+                            <TableColumn fx:id="groupNameCol" text="Group Name" prefWidth="320"/>
+                        </columns>
+                        <placeholder><Label text="No groups yet."/></placeholder>
+                    </TableView>
+
+                    <HBox spacing="8" alignment="CENTER_LEFT">
+                        <TextField fx:id="groupNameField" promptText="Group name" HBox.hgrow="ALWAYS"/>
+                        <Button text="Add"    onAction="#onAddGroup"/>
+                        <Button text="Rename" onAction="#onRenameGroup"/>
+                        <Button text="Delete" onAction="#onDeleteGroup" styleClass="btn-retire"/>
+                    </HBox>
+                </VBox>
+            </Tab>
+
+            <!-- ============================================================ -->
+            <!-- Users                                                         -->
+            <!-- ============================================================ -->
+            <Tab text="Users">
+                <VBox spacing="10">
+                    <padding><Insets top="16" right="16" bottom="16" left="16"/></padding>
+
+                    <TableView fx:id="usersTable" VBox.vgrow="ALWAYS">
+                        <columns>
+                            <TableColumn fx:id="userNameCol"   text="Username"      prefWidth="240"/>
+                            <TableColumn fx:id="userGlobalCol" text="Global Access" prefWidth="120"/>
+                        </columns>
+                        <placeholder><Label text="No users found."/></placeholder>
+                    </TableView>
+
+                    <GridPane hgap="8" vgap="6">
+                        <columnConstraints>
+                            <ColumnConstraints hgrow="ALWAYS"/>
+                            <ColumnConstraints hgrow="ALWAYS"/>
+                        </columnConstraints>
+
+                        <TextField fx:id="newUsernameField" promptText="Username"
+                                   GridPane.columnIndex="0" GridPane.rowIndex="0"/>
+                        <PasswordField fx:id="newPasswordField" promptText="Password"
+                                       GridPane.columnIndex="1" GridPane.rowIndex="0"/>
+
+                        <CheckBox fx:id="newUserGlobalCheck" text="Global access (HR)"
+                                  GridPane.columnIndex="0" GridPane.rowIndex="1"/>
+                        <HBox spacing="8" GridPane.columnIndex="1" GridPane.rowIndex="1">
+                            <Button text="Add User"    onAction="#onAddUser"/>
+                            <Button text="Delete User" onAction="#onDeleteUser" styleClass="btn-retire"/>
+                        </HBox>
+                    </GridPane>
+                </VBox>
+            </Tab>
+
+            <!-- ============================================================ -->
+            <!-- Permissions                                                   -->
+            <!-- ============================================================ -->
+            <Tab text="Permissions">
+                <HBox spacing="16">
+                    <padding><Insets top="16" right="16" bottom="16" left="16"/></padding>
+
+                    <VBox spacing="8" HBox.hgrow="ALWAYS">
+                        <Label text="Users" styleClass="sidebar-heading"/>
+                        <ListView fx:id="permUsersList" VBox.vgrow="ALWAYS">
+                            <placeholder><Label text="No users."/></placeholder>
+                        </ListView>
+                    </VBox>
+
+                    <VBox spacing="8" HBox.hgrow="ALWAYS">
+                        <Label text="Access" styleClass="sidebar-heading"/>
+                        <CheckBox fx:id="permGlobalCheck" text="Global access (HR — sees all groups)"/>
+                        <Label text="Groups:"/>
+                        <ListView fx:id="permGroupsList" VBox.vgrow="ALWAYS">
+                            <placeholder><Label text="No groups."/></placeholder>
+                        </ListView>
+                        <Button text="Save Permissions" onAction="#onSavePermissions" maxWidth="Infinity"/>
+                    </VBox>
+                </HBox>
+            </Tab>
+
+        </TabPane>
+    </center>
+
+</BorderPane>

@@ -39,6 +39,15 @@ service StarGateCore {
 
   // List all groups — used by clients to populate the AssignContact dropdown
   rpc ListGroups(User) returns (GroupsResponse);
+
+  // Admin — HR (global-access) only
+  rpc ListUsers(User) returns (UsersResponse);
+  rpc CreateUser(CreateUserRequest) returns (ActionResponse);
+  rpc DeleteUser(DeleteUserRequest) returns (ActionResponse);
+  rpc CreateGroup(CreateGroupRequest) returns (Group);
+  rpc RenameGroup(RenameGroupRequest) returns (ActionResponse);
+  rpc DeleteGroup(DeleteGroupRequest) returns (ActionResponse);
+  rpc SetUserPermissions(SetPermissionsRequest) returns (ActionResponse);
 }
 
 // -----------------------------------------------------------------------------
@@ -51,9 +60,10 @@ message LoginRequest {
 }
 
 message LoginResponse {
-  bool   success       = 1;
-  string user_id       = 2;
-  string error_message = 3;
+  bool   success           = 1;
+  string user_id           = 2;
+  string error_message     = 3;
+  bool   has_global_access = 4;
 }
 
 // -----------------------------------------------------------------------------
@@ -149,4 +159,54 @@ message AssignRequest {
   string contact_phone = 1;
   string group_id      = 2;
   string user_id       = 3;
+}
+
+// -----------------------------------------------------------------------------
+// Admin
+// -----------------------------------------------------------------------------
+
+message UserInfo {
+  string user_id           = 1;
+  string username          = 2;
+  bool   has_global_access = 3;
+  repeated string group_ids = 4;
+}
+
+message UsersResponse {
+  repeated UserInfo users = 1;
+}
+
+message CreateGroupRequest {
+  string name               = 1;
+  string requesting_user_id = 2;
+}
+
+message RenameGroupRequest {
+  string group_id           = 1;
+  string new_name           = 2;
+  string requesting_user_id = 3;
+}
+
+message DeleteGroupRequest {
+  string group_id           = 1;
+  string requesting_user_id = 2;
+}
+
+message CreateUserRequest {
+  string username           = 1;
+  string password           = 2;
+  bool   has_global_access  = 3;
+  string requesting_user_id = 4;
+}
+
+message DeleteUserRequest {
+  string user_id            = 1;
+  string requesting_user_id = 2;
+}
+
+message SetPermissionsRequest {
+  string user_id            = 1;
+  bool   has_global_access  = 2;
+  repeated string group_ids = 3;
+  string requesting_user_id = 4;
 }

@@ -20,6 +20,7 @@ public class AppState {
 
     private String userId;
     private String username;
+    private boolean hasGlobalAccess;
     private GrpcClient grpc;
 
     private final ObservableList<ChatSession> sessions = FXCollections.observableArrayList();
@@ -46,8 +47,10 @@ public class AppState {
         this.username = username;
     }
 
-    public String getUserId()   { return userId; }
-    public String getUsername() { return username; }
+    public String getUserId()          { return userId; }
+    public String getUsername()        { return username; }
+    public boolean isHasGlobalAccess() { return hasGlobalAccess; }
+    public void setHasGlobalAccess(boolean v) { this.hasGlobalAccess = v; }
 
     // -------------------------------------------------------------------------
     // gRPC client
@@ -139,8 +142,9 @@ public class AppState {
 
     public void reset() {
         shutdown();
-        userId   = null;
-        username = null;
+        userId          = null;
+        username        = null;
+        hasGlobalAccess = false;
         sessions.clear();
         selectedSession = null;
         contactNames.clear();

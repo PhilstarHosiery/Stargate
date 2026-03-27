@@ -52,7 +52,23 @@ func (s *Server) Login(ctx context.Context, req *pb.LoginRequest) (*pb.LoginResp
 	}
 
 	slog.Info("Login: success", "user_id", user.UserID, "username", user.Username)
-	return &pb.LoginResponse{Success: true, UserId: user.UserID}, nil
+	return &pb.LoginResponse{
+		Success:         true,
+		UserId:          user.UserID,
+		HasGlobalAccess: user.HasGlobalAccess,
+	}, nil
+}
+
+// requireGlobalAccess returns a permission-denied error if the user is not a global-access user.
+func (s *Server) requireGlobalAccess(userID string) error {
+	user, err := s.db.GetUserByID(userID)
+	if err != nil {
+		return status.Error(codes.Internal, "internal error")
+	}
+	if user == nil || !user.HasGlobalAccess {
+		return status.Error(codes.PermissionDenied, "global access required")
+	}
+	return nil
 }
 
 // GetSessions returns all sessions the user has permission to see.
@@ -294,4 +310,118 @@ func (s *Server) RetireContact(ctx context.Context, req *pb.RetireRequest) (*pb.
 		GroupId:      "",
 		Status:       newSession.Status,
 	}, nil
+}
+
+// -----------------------------------------------------------------------------
+// Admin RPCs — require global access
+// -----------------------------------------------------------------------------
+
+func (s *Server) ListUsers(ctx context.Context, req *pb.User) (*pb.UsersResponse, error) {
+	if err := s.requireGlobalAccess(req.UserId); err != nil {
+		return nil, err
+	}
+	users, err := s.db.ListUsersWithGroups()
+	if err != nil {
+		slog.Error("ListUsers: db error", "err", err)
+		return nil, status.Error(codes.Internal, "internal error")
+	}
+	var pbUsers []*pb.UserInfo
+	for _, u := range users {
+		pbUsers = append(pbUsers, &pb.UserInfo{
+			UserId:          u.UserID,
+			Username:        u.Username,
+			HasGlobalAccess: u.HasGlobalAccess,
+			GroupIds:        u.GroupIDs,
+		})
+	}
+	return &pb.UsersResponse{Users: pbUsers}, nil
+}
+
+func (s *Server) CreateUser(ctx context.Context, req *pb.CreateUserRequest) (*pb.ActionResponse, error) {
+	if err := s.requireGlobalAccess(req.RequestingUserId); err != nil {
+		return nil, err
+	}
+	if req.Username == "" || req.Password == "" {
+		return &pb.ActionResponse{Success: false, ErrorMessage: "username and password are required"}, nil
+	}
+	hash, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
+	if err != nil {
+		return nil, status.Error(codes.Internal, "internal error")
+	}
+	if _, err := s.db.CreateUser(req.Username, string(hash), req.HasGlobalAccess); err != nil {
+		slog.Error("CreateUser: db error", "err", err)
+		return &pb.ActionResponse{Success: false, ErrorMessage: "could not create user: " + err.Error()}, nil
+	}
+	slog.Info("admin: CreateUser", "username", req.Username, "by", req.RequestingUserId)
+	return &pb.ActionResponse{Success: true}, nil
+}
+
+func (s *Server) DeleteUser(ctx context.Context, req *pb.DeleteUserRequest) (*pb.ActionResponse, error) {
+	if err := s.requireGlobalAccess(req.RequestingUserId); err != nil {
+		return nil, err
+	}
+	if req.UserId == req.RequestingUserId {
+		return &pb.ActionResponse{Success: false, ErrorMessage: "cannot delete your own account"}, nil
+	}
+	if err := s.db.DeleteUser(req.UserId); err != nil {
+		slog.Error("DeleteUser: db error", "err", err)
+		return nil, status.Error(codes.Internal, "internal error")
+	}
+	slog.Info("admin: DeleteUser", "user_id", req.UserId, "by", req.RequestingUserId)
+	return &pb.ActionResponse{Success: true}, nil
+}
+
+func (s *Server) CreateGroup(ctx context.Context, req *pb.CreateGroupRequest) (*pb.Group, error) {
+	if err := s.requireGlobalAccess(req.RequestingUserId); err != nil {
+		return nil, err
+	}
+	if req.Name == "" {
+		return nil, status.Error(codes.InvalidArgument, "name is required")
+	}
+	g, err := s.db.CreateGroup(req.Name)
+	if err != nil {
+		slog.Error("CreateGroup: db error", "err", err)
+		return nil, status.Error(codes.Internal, "internal error")
+	}
+	slog.Info("admin: CreateGroup", "name", req.Name, "by", req.RequestingUserId)
+	return &pb.Group{Id: g.GroupID, Name: g.GroupName}, nil
+}
+
+func (s *Server) RenameGroup(ctx context.Context, req *pb.RenameGroupRequest) (*pb.ActionResponse, error) {
+	if err := s.requireGlobalAccess(req.RequestingUserId); err != nil {
+		return nil, err
+	}
+	if req.GroupId == "" || req.NewName == "" {
+		return &pb.ActionResponse{Success: false, ErrorMessage: "group_id and new_name are required"}, nil
+	}
+	if err := s.db.RenameGroup(req.GroupId, req.NewName); err != nil {
+		slog.Error("RenameGroup: db error", "err", err)
+		return nil, status.Error(codes.Internal, "internal error")
+	}
+	slog.Info("admin: RenameGroup", "group_id", req.GroupId, "new_name", req.NewName, "by", req.RequestingUserId)
+	return &pb.ActionResponse{Success: true}, nil
+}
+
+func (s *Server) DeleteGroup(ctx context.Context, req *pb.DeleteGroupRequest) (*pb.ActionResponse, error) {
+	if err := s.requireGlobalAccess(req.RequestingUserId); err != nil {
+		return nil, err
+	}
+	if err := s.db.DeleteGroup(req.GroupId); err != nil {
+		slog.Error("DeleteGroup: db error", "err", err)
+		return &pb.ActionResponse{Success: false, ErrorMessage: err.Error()}, nil
+	}
+	slog.Info("admin: DeleteGroup", "group_id", req.GroupId, "by", req.RequestingUserId)
+	return &pb.ActionResponse{Success: true}, nil
+}
+
+func (s *Server) SetUserPermissions(ctx context.Context, req *pb.SetPermissionsRequest) (*pb.ActionResponse, error) {
+	if err := s.requireGlobalAccess(req.RequestingUserId); err != nil {
+		return nil, err
+	}
+	if err := s.db.SetUserPermissions(req.UserId, req.GroupIds, req.HasGlobalAccess); err != nil {
+		slog.Error("SetUserPermissions: db error", "err", err)
+		return nil, status.Error(codes.Internal, "internal error")
+	}
+	slog.Info("admin: SetUserPermissions", "user_id", req.UserId, "by", req.RequestingUserId)
+	return &pb.ActionResponse{Success: true}, nil
 }
