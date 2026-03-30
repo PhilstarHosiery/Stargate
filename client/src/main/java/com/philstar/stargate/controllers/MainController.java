@@ -282,21 +282,32 @@ public class MainController {
         ChatSession session = state.getSelectedSession();
         if (session == null) return;
 
-        replyField.clear();
-        addBubble(text, "OUTBOUND", Instant.now().toString(),
-                  state.getUserId(), state.getUsername());
-        scrollToBottom();
-
-        String userId = state.getUserId();
+        String userId    = state.getUserId();
+        String username  = state.getUsername();
         String sessionId = session.getSessionId();
 
+        replyField.setDisable(true);
         Task<ActionResponse> task = new Task<>() {
             @Override
             protected ActionResponse call() {
                 return state.getGrpc().sendReply(sessionId, text, userId);
             }
         };
-        task.setOnFailed(e -> showError("Failed to send: " + task.getException().getMessage()));
+        task.setOnSucceeded(e -> {
+            replyField.setDisable(false);
+            ActionResponse resp = task.getValue();
+            if (resp.getSuccess()) {
+                replyField.clear();
+                addBubble(text, "OUTBOUND", Instant.now().toString(), userId, username);
+                scrollToBottom();
+            } else {
+                showError("Send failed: " + resp.getErrorMessage());
+            }
+        });
+        task.setOnFailed(e -> {
+            replyField.setDisable(false);
+            showError("Failed to send: " + task.getException().getMessage());
+        });
         bg(task);
     }
 
