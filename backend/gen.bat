@@ -1,26 +1,25 @@
 @echo off
 :: Generate Go code from proto/stargate.proto into gen/
 ::
-:: protoc is bundled at ..\bin\protoc.exe (protoc 34.0)
-:: Go plugins must be installed:
+:: Requires (install once):
+::   go install github.com/bufbuild/buf/cmd/buf@latest
 ::   go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
 ::   go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
 
 if not exist gen mkdir gen
 
-..\bin\protoc.exe ^
-  --proto_path=..\proto ^
-  --go_out=gen ^
-  --go_opt=paths=source_relative ^
-  --go-grpc_out=gen ^
-  --go-grpc_opt=paths=source_relative ^
-  ..\proto\stargate.proto
-
+pushd ..
+buf generate
 if %ERRORLEVEL% neq 0 (
+    popd
     echo.
-    echo ERROR: protoc failed. Make sure protoc-gen-go and protoc-gen-go-grpc are installed and on PATH.
+    echo ERROR: buf generate failed. Make sure all three tools are installed:
+    echo   go install github.com/bufbuild/buf/cmd/buf@latest
+    echo   go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
+    echo   go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
     exit /b 1
 )
+popd
 
 :: Remove the stub file now that real generated code exists.
 if exist gen\stub.go del gen\stub.go

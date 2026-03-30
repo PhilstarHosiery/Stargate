@@ -1,7 +1,3 @@
-# Bundled binaries (downloaded locally, not committed)
-bin/protoc
-bin/protoc.exe
-
 # OS
 .DS_Store
 Thumbs.db

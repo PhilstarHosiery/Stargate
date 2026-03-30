@@ -20,7 +20,7 @@ go build -o stargate-server ./cmd/server
 build.bat
 
 # Regenerate gRPC code from proto/stargate.proto
-make gen          # Unix (uses bin/protoc)
+make gen          # Unix
 gen.bat           # Windows
 
 # Dependency management
@@ -94,9 +94,12 @@ sms:
 
 ### Proto regeneration prerequisites
 
-Requires `protoc` v34.0 placed in `../bin/` (see `../bin/README.md`) plus the Go plugins:
+Install once via `go install`:
 
 ```bash
+go install github.com/bufbuild/buf/cmd/buf@latest
 go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
 go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
 ```
+
+`buf generate` is driven by `buf.gen.yaml` at the repo root and `proto/buf.yaml`. No separate `protoc` binary needed.

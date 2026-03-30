@@ -9,7 +9,7 @@ Stargate/
 ├── proto/          # Shared gRPC contract (stargate.proto)
 ├── backend/        # Go server (webhook receiver + gRPC server)
 ├── client/         # JavaFX desktop client (Gradle)
-└── bin/            # Local protoc binary (not committed — see bin/README.md)
+└── buf.gen.yaml    # buf code generation config (proto → backend/gen)
 ```
 
 ## Prerequisites
@@ -62,8 +62,9 @@ cd client && ./gradlew generateProto
 cd backend
 gen.bat
 ```
-Requires `protoc` v34.0 placed at `bin/protoc.exe` (see `bin/README.md`) and the Go plugins on `PATH`:
+Requires three tools installed via `go install` (one-time setup):
 ```bat
+go install github.com/bufbuild/buf/cmd/buf@latest
 go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
 go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
 ```
