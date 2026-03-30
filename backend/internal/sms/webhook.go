@@ -122,10 +122,12 @@ func NewWebhookHandler(database *db.DB, broadcaster Broadcaster, webhookSecret s
 		}
 
 		// Parse the authoritative receive time from SMS Gate; fall back to now if missing/malformed.
+		// Normalize to UTC so all timestamps in the system share the same reference.
 		receivedAt, err := time.Parse(time.RFC3339Nano, event.Payload.ReceivedAt)
 		if err != nil {
-			receivedAt = time.Now().UTC()
+			receivedAt = time.Now()
 		}
+		receivedAt = receivedAt.UTC()
 
 		// Store the inbound message; nil return means duplicate — already processed.
 		msg, err := database.CreateMessage(sess.SessionID, "INBOUND", message, "", event.Payload.MessageID, receivedAt)

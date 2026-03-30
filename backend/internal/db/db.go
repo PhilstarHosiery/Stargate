@@ -320,7 +320,13 @@ func (d *DB) GetMessagesBySession(sessionID string) ([]*models.Message, error) {
 		if err := rows.Scan(&m.MessageID, &m.SessionID, &m.Direction, &m.Text, &m.SentByUserID, &ts); err != nil {
 			return nil, fmt.Errorf("db: scan message: %w", err)
 		}
-		m.Timestamp, _ = time.Parse(time.RFC3339, ts)
+		if t, err := time.Parse(time.RFC3339, ts); err == nil {
+			m.Timestamp = t
+		} else {
+			// Legacy rows were stored without timezone as "2006-01-02 15:04:05".
+			// Treat them as UTC — best effort for old data.
+			m.Timestamp, _ = time.ParseInLocation("2006-01-02 15:04:05", ts, time.UTC)
+		}
 		msgs = append(msgs, &m)
 	}
 	return msgs, rows.Err()
@@ -347,7 +353,7 @@ func (d *DB) CreateMessage(sessionID, direction, text, sentByUserID, gatewayMess
 		 VALUES (?, ?, ?, ?, ?, ?, ?)`,
 		m.MessageID, m.SessionID, m.Direction, m.Text,
 		nullableString(sentByUserID),
-		m.Timestamp.Format("2006-01-02 15:04:05"),
+		m.Timestamp.UTC().Format(time.RFC3339),
 		nullableString(gatewayMessageID),
 	)
 	if err != nil {
