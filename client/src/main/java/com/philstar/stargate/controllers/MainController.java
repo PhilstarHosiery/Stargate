@@ -10,6 +10,11 @@ import com.philstar.stargate.proto.MessageEvent;
 import com.philstar.stargate.ui.SessionCell;
 import io.grpc.StatusRuntimeException;
 import io.grpc.stub.StreamObserver;
+import java.awt.EventQueue;
+import java.awt.SystemTray;
+import java.awt.TrayIcon;
+import java.awt.TrayIcon.MessageType;
+import java.awt.image.BufferedImage;
 import javafx.application.Platform;
 import javafx.collections.transformation.FilteredList;
 import javafx.concurrent.Task;
@@ -229,6 +234,21 @@ public class MainController {
                           inbound ? "" : event.getSenderType(),
                           inbound ? "" : event.getSenderUsername());
                 scrollToBottom();
+            }
+
+            // Notify for inbound messages and messages from other users (not my own sends).
+            boolean isMine = state.getUserId().equals(event.getSenderType());
+            if (!isMine) {
+                String phone = state.getSessions().stream()
+                        .filter(s -> s.getSessionId().equals(event.getSessionId()))
+                        .map(s -> s.getContactPhone())
+                        .findFirst().orElse(null);
+                String title = phone != null ? state.getContactDisplayName(phone) : "StarGate";
+                boolean inbound = "Contact".equals(event.getSenderType());
+                String body = inbound
+                        ? event.getMessageText()
+                        : event.getSenderUsername() + ": " + event.getMessageText();
+                showNotification(title, body);
             }
         }
 
@@ -505,6 +525,34 @@ public class MainController {
     // -------------------------------------------------------------------------
     // Helpers
     // -------------------------------------------------------------------------
+
+    private void showNotification(String title, String body) {
+        if (!SystemTray.isSupported()) return;
+        EventQueue.invokeLater(() -> {
+            try {
+                // Minimal 16×16 icon in the app's primary colour.
+                BufferedImage img = new BufferedImage(16, 16, BufferedImage.TYPE_INT_RGB);
+                var g = img.createGraphics();
+                g.setColor(new java.awt.Color(0x0f, 0x34, 0x60));
+                g.fillRect(0, 0, 16, 16);
+                g.dispose();
+
+                SystemTray tray = SystemTray.getSystemTray();
+                TrayIcon icon = new TrayIcon(img, "StarGate");
+                icon.setImageAutoSize(true);
+                tray.add(icon);
+                icon.displayMessage(title, body, MessageType.INFO);
+
+                // Remove the tray icon shortly after so it doesn't linger.
+                Thread cleanup = new Thread(() -> {
+                    try { Thread.sleep(5_000); } catch (InterruptedException ignored) {}
+                    tray.remove(icon);
+                });
+                cleanup.setDaemon(true);
+                cleanup.start();
+            } catch (Exception ignored) {}
+        });
+    }
 
     private void bg(Task<?> task) {
         Thread t = new Thread(task);

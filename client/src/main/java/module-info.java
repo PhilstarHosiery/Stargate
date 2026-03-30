@@ -3,6 +3,9 @@ module com.philstar.stargate {
     requires javafx.controls;
     requires javafx.fxml;
 
+    // OS desktop integration (system tray notifications)
+    requires java.desktop;
+
     // Logging (SLF4J 2.x is fully modular)
     requires org.slf4j;
 
