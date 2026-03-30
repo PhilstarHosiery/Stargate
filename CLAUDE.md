@@ -30,9 +30,9 @@ Centralized, real-time SMS Gateway for Philstar. Remote contacts text a central 
 - **Users** — `(user_id, username, password_hash, has_global_access)` — `has_global_access = true` grants access to all groups (HR use case).
 - **Groups** — `(group_id, group_name)`.
 - **User_Groups** — Access control mapping. `(user_id, group_id)`.
-- **Contacts** — `(phone_number PK, name nullable, group_id nullable, assigned_sim nullable)`.
+- **Contacts** — `(contact_phone PK, name nullable, group_id nullable, assigned_sim NOT NULL DEFAULT 0)`.
 - **Sessions** — Conversation threads. `(session_id, contact_phone, status OPEN|CLOSED)`.
-- **Messages** — `(message_id, session_id, direction INBOUND|OUTBOUND, text, sent_by_user_id nullable, timestamp)`.
+- **Messages** — `(message_id, session_id, direction INBOUND|OUTBOUND, text, sent_by_user_id nullable, timestamp, gateway_message_id nullable unique)` — `gateway_message_id` is used for webhook deduplication.
 
 ## Core Workflows
 
@@ -55,4 +55,28 @@ Centralized, real-time SMS Gateway for Philstar. Remote contacts text a central 
 
 ## gRPC Contract
 
-See `proto/stargate.proto`.
+Defined in `proto/stargate.proto`. The service is `StarGateCoreServer`.
+
+| RPC | Type | Description |
+|-----|------|-------------|
+| `Login` | Unary | Validate credentials, return user info |
+| `ChangePassword` | Unary | Verify current password, set new hash |
+| `SubscribeToInbox` | Server-streaming | Persistent stream for real-time `MessageEvent` pushes |
+| `GetSessions` | Unary | All sessions the caller has access to |
+| `GetSession` | Unary | Single session by ID |
+| `GetMessages` | Unary | All messages in a session |
+| `SendReply` | Unary | Store outbound message, send via SMS gateway, broadcast to peers |
+| `RenameContact` | Unary | Set display name on a contact |
+| `AssignContact` | Unary | Move contact to a group; broadcasts re-routing event |
+| `RetireContact` | Unary | Archive old contact (rename to `phone-old`), create fresh unknown contact |
+| `CreateSession` | Unary | Start an outbound conversation to a new phone number |
+| `ListUsers` | Unary | Admin: all users with their group mappings |
+| `CreateUser` | Unary | Admin: add a new user |
+| `DeleteUser` | Unary | Admin: remove a user |
+| `ListGroups` | Unary | List accessible groups (all for HR, filtered otherwise) |
+| `CreateGroup` | Unary | Admin: add a new group |
+| `RenameGroup` | Unary | Admin: rename a group |
+| `DeleteGroup` | Unary | Admin: remove a group (must be empty) |
+| `SetUserPermissions` | Unary | Admin: set global flag and group memberships atomically |
+
+All admin RPCs require `has_global_access = true`; the server enforces this via `requireGlobalAccess()`.

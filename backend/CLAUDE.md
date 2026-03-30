@@ -84,11 +84,12 @@ server:
 database:
   path: "stargate.db"
 sms:
-  gate_url: "http://192.168.1.1:8080"
-  username: ""        # Local Mode (basic auth)
+  gate_url: "http://192.168.1.1"    # SMS Gate app / RUT241 API base URL
+  username: ""                       # Local Mode basic auth (SMS Gate → Settings → Local Server)
   password: ""
-  api_key: ""         # Cloud Mode (bearer token) — leave empty for Local Mode
-  webhook_secret: ""  # HMAC-SHA256 signing key from SMS Gate settings
+  api_key: ""                        # Cloud Mode bearer token — leave empty for Local Mode
+  webhook_secret: ""                 # HMAC-SHA256 signing key from SMS Gate settings
+  webhook_url: "https://your-server/webhook"  # Externally-accessible URL SMS Gate will POST to
 ```
 
 ### Proto regeneration prerequisites
