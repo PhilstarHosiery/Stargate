@@ -337,7 +337,8 @@ public class MainController {
         Optional<ButtonType> result = dlg.showAndWait();
         if (result.isEmpty() || result.get() != ButtonType.OK) return;
 
-        String phone   = phoneField.getText().trim();
+        String raw     = phoneField.getText().trim();
+        String phone   = raw.startsWith("0") ? "+63" + raw.substring(1) : raw;
         String groupId = groupIds.get(groupChoice.getSelectionModel().getSelectedIndex());
         String name    = nameField.getText().trim();
 
