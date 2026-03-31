@@ -613,11 +613,11 @@ public class MainController {
         if (!SystemTray.isSupported()) return;
         EventQueue.invokeLater(() -> {
             try {
-                BufferedImage img = new BufferedImage(16, 16, BufferedImage.TYPE_INT_RGB);
-                var g = img.createGraphics();
-                g.setColor(new java.awt.Color(0x0f, 0x34, 0x60));
-                g.fillRect(0, 0, 16, 16);
-                g.dispose();
+                BufferedImage img;
+                try (var stream = getClass().getResourceAsStream(
+                        "/com/philstar/stargate/app.png")) {
+                    img = javax.imageio.ImageIO.read(stream);
+                }
 
                 trayIcon = new TrayIcon(img, "StarGate");
                 trayIcon.setImageAutoSize(true);

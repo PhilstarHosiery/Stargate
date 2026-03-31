@@ -198,6 +198,7 @@ jlink {
         appVersion     = project.version.toString().replace('-SNAPSHOT', '')
         vendor         = 'Philstar Hosiery, Inc.'
         installerType  = 'msi'
+        icon           = 'src/main/resources/com/philstar/stargate/app.ico'
 
         installerOptions = [
                 '--win-per-user-install',

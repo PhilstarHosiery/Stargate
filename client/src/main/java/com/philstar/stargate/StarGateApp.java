@@ -4,6 +4,7 @@ import java.awt.SystemTray;
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
+import javafx.scene.image.Image;
 import javafx.stage.Stage;
 
 import java.io.IOException;
@@ -19,6 +20,7 @@ public class StarGateApp extends Application {
         primaryStage = stage;
         stage.setTitle("StarGate");
         stage.setResizable(true);
+        stage.getIcons().add(new Image(StarGateApp.class.getResourceAsStream("app.png")));
         showLogin();
         stage.show();
     }
