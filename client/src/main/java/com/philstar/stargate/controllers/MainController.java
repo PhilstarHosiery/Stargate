@@ -34,6 +34,10 @@ import java.util.Optional;
 
 public class MainController {
 
+    // AWT tray icon — initialized once, reused for all OS notifications.
+    private TrayIcon trayIcon;
+    private volatile String pendingSessionId;
+
     // Toolbar
     @FXML private Label  usernameLabel;
     @FXML private Button adminButton;
@@ -96,6 +100,7 @@ public class MainController {
 
         loadSessions();
         startSubscription();
+        initTrayIcon();
     }
 
     // -------------------------------------------------------------------------
@@ -248,11 +253,11 @@ public class MainController {
                 String body = inbound
                         ? event.getMessageText()
                         : event.getSenderUsername() + ": " + event.getMessageText();
-                showNotification(title, body);
+                showNotification(title, body, event.getSessionId());
             }
         }
 
-        // If this session isn't in our list yet, fetch and add it.
+        // If this session isn't in our list yet, fetch and add it; otherwise promote it to top.
         boolean known = state.getSessions().stream()
                 .anyMatch(s -> s.getSessionId().equals(event.getSessionId()));
         if (!known) {
@@ -266,6 +271,11 @@ public class MainController {
             };
             task.setOnSucceeded(e -> state.replaceOrAddSession(task.getValue()));
             bg(task);
+        } else {
+            state.getSessions().stream()
+                    .filter(s -> s.getSessionId().equals(event.getSessionId()))
+                    .findFirst()
+                    .ifPresent(state::replaceOrAddSession);
         }
     }
 
@@ -584,6 +594,7 @@ public class MainController {
 
     @FXML
     private void onLogout() {
+        removeTrayIcon();
         AppState.get().reset();
         try {
             StarGateApp.showLogin();
@@ -596,31 +607,50 @@ public class MainController {
     // Helpers
     // -------------------------------------------------------------------------
 
-    private void showNotification(String title, String body) {
+    private void initTrayIcon() {
         if (!SystemTray.isSupported()) return;
         EventQueue.invokeLater(() -> {
             try {
-                // Minimal 16×16 icon in the app's primary colour.
                 BufferedImage img = new BufferedImage(16, 16, BufferedImage.TYPE_INT_RGB);
                 var g = img.createGraphics();
                 g.setColor(new java.awt.Color(0x0f, 0x34, 0x60));
                 g.fillRect(0, 0, 16, 16);
                 g.dispose();
 
-                SystemTray tray = SystemTray.getSystemTray();
-                TrayIcon icon = new TrayIcon(img, "StarGate");
-                icon.setImageAutoSize(true);
-                tray.add(icon);
-                icon.displayMessage(title, body, MessageType.INFO);
-
-                // Remove the tray icon shortly after so it doesn't linger.
-                Thread cleanup = new Thread(() -> {
-                    try { Thread.sleep(5_000); } catch (InterruptedException ignored) {}
-                    tray.remove(icon);
-                });
-                cleanup.setDaemon(true);
-                cleanup.start();
+                trayIcon = new TrayIcon(img, "StarGate");
+                trayIcon.setImageAutoSize(true);
+                trayIcon.addActionListener(e -> navigateToPendingSession());
+                SystemTray.getSystemTray().add(trayIcon);
             } catch (Exception ignored) {}
+        });
+    }
+
+    private void showNotification(String title, String body, String sessionId) {
+        if (trayIcon == null) return;
+        pendingSessionId = sessionId;
+        EventQueue.invokeLater(() -> trayIcon.displayMessage(title, body, MessageType.INFO));
+    }
+
+    private void navigateToPendingSession() {
+        String sid = pendingSessionId;
+        if (sid == null) return;
+        Platform.runLater(() -> {
+            javafx.stage.Stage stage = StarGateApp.getPrimaryStage();
+            stage.setIconified(false);
+            stage.toFront();
+            stage.requestFocus();
+            AppState.get().getSessions().stream()
+                    .filter(s -> s.getSessionId().equals(sid))
+                    .findFirst()
+                    .ifPresent(s -> sessionList.getSelectionModel().select(s));
+        });
+    }
+
+    private void removeTrayIcon() {
+        if (trayIcon == null) return;
+        EventQueue.invokeLater(() -> {
+            SystemTray.getSystemTray().remove(trayIcon);
+            trayIcon = null;
         });
     }
 

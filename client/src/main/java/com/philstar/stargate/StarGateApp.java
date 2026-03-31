@@ -1,5 +1,6 @@
 package com.philstar.stargate;
 
+import java.awt.SystemTray;
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
@@ -10,6 +11,8 @@ import java.io.IOException;
 public class StarGateApp extends Application {
 
     private static Stage primaryStage;
+
+    public static Stage getPrimaryStage() { return primaryStage; }
 
     @Override
     public void start(Stage stage) throws IOException {
@@ -56,6 +59,10 @@ public class StarGateApp extends Application {
 
     @Override
     public void stop() {
+        if (SystemTray.isSupported()) {
+            SystemTray tray = SystemTray.getSystemTray();
+            for (var icon : tray.getTrayIcons()) tray.remove(icon);
+        }
         AppState.get().shutdown();
     }
 }
