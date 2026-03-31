@@ -630,7 +630,7 @@ public class MainController {
     private void showNotification(String title, String body, String sessionId) {
         if (trayIcon == null) return;
         pendingSessionId = sessionId;
-        EventQueue.invokeLater(() -> trayIcon.displayMessage(title, body, MessageType.INFO));
+        EventQueue.invokeLater(() -> trayIcon.displayMessage("StarGate", title + ": " + body, MessageType.INFO));
     }
 
     private void navigateToPendingSession() {
